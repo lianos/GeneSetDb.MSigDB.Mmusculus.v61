@@ -68,7 +68,7 @@ for (col in unique(geneSets(mgdb)$collection)) {
 
 org(mgdb) <- 'Mus_musculus'
 # gdb.fn <- sprintf('MSigDB.Mus_musculus.GeneSetDb.rds', species)
-gdb.fn <- '../extdata/GeneSetDb.MSigDB.Mmusculus-entez.v61.rds'
+gdb.fn <- '../extdata/GeneSetDb.MSigDB.Mmusculus-entrez.v61.rds'
 saveRDS(mgdb, gdb.fn)
 
 # Create Ensembl version
@@ -79,12 +79,12 @@ saveRDS(mgdb, gdb.fn)
 #
 # mgdb <- readRDS("inst/extdata/GeneSetDb.MSigDB.Mmusculus-entrez.v61.rds")
 mdf <- mgdb@db
-mouse <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+mart <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
 exref <- getBM(
   attributes = c("entrezgene", "ensembl_gene_id", "mgi_symbol"),
   filters = "entrezgene",
   values = unique(mdf$featureId),
-  mart = mouse) %>%
+  mart = mart) %>%
   transmute(entrezgene = as.character(entrezgene),
             featureId = ensembl_gene_id, symbol = mgi_symbol)
 
