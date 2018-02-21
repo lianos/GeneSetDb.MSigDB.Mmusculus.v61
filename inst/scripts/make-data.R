@@ -68,5 +68,52 @@ for (col in unique(geneSets(mgdb)$collection)) {
 
 org(mgdb) <- 'Mus_musculus'
 # gdb.fn <- sprintf('MSigDB.Mus_musculus.GeneSetDb.rds', species)
-gdb.fn <- '../extdata/GeneSetDb.MSigDB.Mmusculus.v61.rds'
+gdb.fn <- '../extdata/GeneSetDb.MSigDB.Mmusculus-entez.v61.rds'
 saveRDS(mgdb, gdb.fn)
+
+# Create Ensembl version
+# library(multiGSEA)
+# library(biomaRt)
+# library(dplyr)
+# library(GSEABase)
+#
+# mgdb <- readRDS("inst/extdata/GeneSetDb.MSigDB.Mmusculus-entrez.v61.rds")
+mdf <- mgdb@db
+mouse <- useMart("ensembl", dataset = "mmusculus_gene_ensembl")
+exref <- getBM(
+  attributes = c("entrezgene", "ensembl_gene_id", "mgi_symbol"),
+  filters = "entrezgene",
+  values = unique(mdf$featureId),
+  mart = mouse) %>%
+  transmute(entrezgene = as.character(entrezgene),
+            featureId = ensembl_gene_id, symbol = mgi_symbol)
+
+mdf.ens <- mdf %>%
+  select(collection, name, entrezgene = featureId) %>%
+  inner_join(exref, by = "entrezgene") %>%
+  arrange(collection, name, symbol) %>%
+  distinct(collection, name, featureId, .keep_all = TRUE) %>%
+  select(-entrezgene)
+
+gdb2 <- GeneSetDb(mdf.ens)
+take.cols <- c('collection', 'name', setdiff(colnames(mgdb@table), colnames(gdb2@table)))
+meta <- mgdb@table[gdb2@table, take.cols, with=FALSE]
+mnew <- gdb2@table[meta]
+stopifnot(
+  all.equal(gdb2@table[, list(collection, name)], mnew[, list(collection, name)]),
+  all.equal(gdb2@table$N, mnew$N))
+gdb2@table <- mnew
+
+url.fn <- function(collection, name) {
+  url <- "http://www.broadinstitute.org/gsea/msigdb/cards/%s.html"
+  sprintf(url, name)
+}
+for (col in unique(geneSets(gdb2)$collection)) {
+  geneSetCollectionURLfunction(gdb2, col) <- url.fn
+  featureIdType(gdb2, col) <- ENSEMBLIdentifier()
+  gdb2 <- addCollectionMetadata(gdb2, col, 'source', 'MSigDB_v6.1')
+}
+
+org(gdb2) <- 'Mus_musculus'
+gdb.fn <- '../extdata/GeneSetDb.MSigDB.Mmusculus-ensembl.v61.rds'
+saveRDS(gdb2, gdb.fn)

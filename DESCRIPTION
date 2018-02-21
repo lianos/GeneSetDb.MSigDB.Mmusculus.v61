@@ -2,7 +2,7 @@ Package: GeneSetDb.MSigDB.Mmusculus.v61
 Title: Mouse MSigDB genesets GeneSetDb object (v6.1)
 Description: Provides the MSigDB genesets as a GeneSetDb object
   with mouse Entrez Identifiers mapped from the original human ones.
-Version: 0.99.0
+Version: 0.99.1
 Author: Steve Lianoglou
 Maintainer: Steve Lianoglou <lianoglou.steve@gene.com>
 Depends: multiGSEA
